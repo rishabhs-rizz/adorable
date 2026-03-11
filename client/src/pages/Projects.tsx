@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { Project } from "../types";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowBigDownDashIcon,
   EyeIcon,
@@ -20,6 +20,9 @@ import {
   dummyVersion,
 } from "../assets/assets";
 import SideBar from "../components/SideBar";
+import ProjectPreview, {
+  type ProjectPreviewRef,
+} from "../components/ProjectPreview";
 
 const Projects = () => {
   const { projectId } = useParams();
@@ -34,6 +37,8 @@ const Projects = () => {
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const previewRef = useRef<ProjectPreviewRef>(null);
 
   const fetchProject = async () => {
     const project = dummyProjects.find((p) => p.id === projectId);
@@ -168,7 +173,14 @@ const Projects = () => {
           isGenerating={isGenerating}
           setIsGenerating={setIsGenerating}
         />
-        <div className="flex-1 p-2 pl-0">Projectpreview</div>
+        <div className="flex-1 p-2 pl-0">
+          <ProjectPreview
+            ref={previewRef}
+            project={project}
+            isGenerating={isGenerating}
+            device={device}
+          />
+        </div>
       </div>
     </div>
   ) : (
