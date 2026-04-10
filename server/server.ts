@@ -5,12 +5,12 @@ import cors from "cors";
 const app = express();
 
 const corsOptions = {
-  origin: [],
-  Credentials: true,
+  origin: process.env.TRUSTED_ORIGINS?.split(",") || [],
+  credentials: true,
 };
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const port = 3000;
