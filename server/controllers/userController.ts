@@ -205,3 +205,30 @@ export const createUserProjects = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// Controller Fn to get a single User project
+export const getUserProject = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "User ID not found in request" });
+    }
+
+    const { projectId } = req.params;
+
+    const project = await prisma.websiteProject.findUnique({
+      where: { id: projectId as string, userId },
+      include: {
+        conversation: {
+          orderBy: { timestamp: "asc" },
+        },
+        versions: { orderBy: { timestamp: "asc" } },
+      },
+    });
+
+    res.json({ project });
+  } catch (error: any) {
+    console.error(error.code || error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
