@@ -232,3 +232,57 @@ export const getUserProject = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// Controller Fn to get all User projects
+export const getUserProjects = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "User ID not found in request" });
+    }
+
+    const projects = await prisma.websiteProject.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    res.json({ projects });
+  } catch (error: any) {
+    console.error(error.code || error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//controller Fn to Toggle Project Publish
+export const togglepublish = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "User ID not found in request" });
+    }
+
+    const { projectId } = req.params;
+
+    const project = await prisma.websiteProject.findUnique({
+      where: { id: projectId as string, userId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    await prisma.websiteProject.update({
+      where: { id: projectId as string },
+      data: { isPublished: !project.isPublished },
+    });
+
+    res.json({
+      message: project.isPublished
+        ? "Project Unpublished"
+        : "Project Published Successfully",
+    });
+  } catch (error: any) {
+    console.error(error.code || error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
