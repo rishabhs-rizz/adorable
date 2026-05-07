@@ -233,7 +233,7 @@ export const getUserProject = async (req: Request, res: Response) => {
   }
 };
 
-// Controller Fn to get all User projects
+// Controller Fn to get User's all projects
 export const getUserProjects = async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
@@ -286,3 +286,6 @@ export const togglepublish = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+//controller fn to Purchase credits
+export const purchaseCredits = async (req: Request, res: Response) => {};
