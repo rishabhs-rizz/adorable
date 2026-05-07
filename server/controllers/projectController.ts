@@ -214,3 +214,74 @@ export const rollbackToVersion = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Controller Fn to Delete a project
+export const deleteProject = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { projectId } = req.params as {
+      projectId: string;
+    };
+
+    await prisma.websiteProject.delete({
+      where: { id: projectId, userId },
+    });
+
+    res.json({
+      message: "Project deleted successfully",
+    });
+  } catch (error: any) {
+    console.log(error.code || error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Controller Fn for getting project code for preview
+
+export const getProjectPreview = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { projectId } = req.params as {
+      projectId: string;
+    };
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const project = await prisma.websiteProject.findFirst({
+      where: { id: projectId, userId },
+      include: { versions: true },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    res.json({
+      project,
+    });
+  } catch (error: any) {
+    console.log(error.code || error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Controller Fn to get Published project for community page
+export const getPublishedProjects = async (req: Request, res: Response) => {
+  try {
+    const projects = await prisma.websiteProject.findMany({
+      where: { isPublished: true },
+      include: { user: true },
+    });
+
+    res.json({
+      projects,
+    });
+  } catch (error: any) {
+    console.log(error.code || error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//
