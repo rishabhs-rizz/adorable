@@ -267,7 +267,7 @@ export const getProjectPreview = async (req: Request, res: Response) => {
   }
 };
 
-// Controller Fn to get Published project for community page
+// Controller Fn to get all Published project for community page
 export const getPublishedProjects = async (req: Request, res: Response) => {
   try {
     const projects = await prisma.websiteProject.findMany({
@@ -284,4 +284,66 @@ export const getPublishedProjects = async (req: Request, res: Response) => {
   }
 };
 
-//
+// Get a single published project by ID
+export const getProjectById = async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params as {
+      projectId: string;
+    };
+    const project = await prisma.websiteProject.findFirst({
+      where: { id: projectId },
+    });
+
+    if (!project || project.isPublished == false || !project.current_code) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    res.json({
+      code: project.current_code,
+    });
+  } catch (error: any) {
+    console.log(error.code || error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+//Controller Fn to Save project code
+export const saveProjectCode = async (req: Request, res: Response) => {
+  try {
+    const userId = req.userId;
+    const { projectId } = req.params as {
+      projectId: string;
+    };
+    const code = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    if (!code || code.trim() === "") {
+      return res.status(400).json({ error: "Code is required" });
+    }
+
+    const project = await prisma.websiteProject.findUnique({
+      where: { id: projectId, userId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    await prisma.websiteProject.update({
+      where: { id: projectId },
+      data: {
+        current_code: code,
+        current_version_index: "",
+      },
+    });
+
+    res.json({
+      message: "Project code saved successfully",
+    });
+  } catch (error: any) {
+    console.log(error.code || error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
