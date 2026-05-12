@@ -53,7 +53,8 @@ export const makeRevision = async (req: Request, res: Response) => {
 
     //enhance the project by sending the conversation to openai and getting the revised code
     const promptEnhanceResponse = await openai.chat.completions.create({
-      model: "z-ai/glm-4.5-air:free",
+      model: "poolside/laguna-m.1:free",
+      max_tokens: 4096,
       messages: [
         {
           role: "system",
@@ -94,7 +95,8 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
 
     //generate website Code
     const codeGenerationResponse = await openai.chat.completions.create({
-      model: "z-ai/glm-4.5-air:free",
+      model: "poolside/laguna-m.1:free",
+      max_tokens: 4096,
       messages: [
         {
           role: "system",
@@ -119,6 +121,21 @@ Return ONLY the enhanced request, nothing else. Keep it concise (1-2 sentences).
     });
 
     const code = codeGenerationResponse.choices[0].message.content || "";
+
+    if (!code || code.trim() === "") {
+      await prisma.conversation.create({
+        data: {
+          role: "assistant",
+          content: "Unable to generate the code, please try again",
+          projectId,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { credits: { increment: 5 } },
+      });
+      return;
+    }
 
     //update the version
     const version = await prisma.version.create({

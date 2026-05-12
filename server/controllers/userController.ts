@@ -80,7 +80,8 @@ export const createUserProjects = async (req: Request, res: Response) => {
 
     //Working on/Enhancing User Prompt by openai
     const promptEnhanceResponse = await openai.chat.completions.create({
-      model: "z-ai/glm-4.5-air:free",
+      model: "poolside/laguna-m.1:free",
+      max_tokens: 4096,
       messages: [
         {
           role: "system",
@@ -103,9 +104,11 @@ export const createUserProjects = async (req: Request, res: Response) => {
       ],
     });
 
+    console.log("Prompt Enhance Response:", promptEnhanceResponse);
+
     const enhancedPrompt = promptEnhanceResponse.choices[0].message.content;
 
-    // Save the enhanced prompt as a new message in the conversation
+    // // Save the enhanced prompt as a new message in the conversation
     await prisma.conversation.create({
       data: {
         role: "assistant",
@@ -125,14 +128,15 @@ export const createUserProjects = async (req: Request, res: Response) => {
 
     //generate website Code using the enhanced prompt
     const codeGenerationResponse = await openai.chat.completions.create({
-      model: "z-ai/glm-4.5-air:free",
+      model: "poolside/laguna-m.1:free",
+      max_tokens: 4096,
       messages: [
         {
           role: "system",
           content: `You are an expert web developer. Create a complete, production-ready, single-page website based on this request: "${enhancedPrompt}"
 
     CRITICAL REQUIREMENTS:
-    - You MUST output valid HTML ONLY. 
+    - You MUST output valid HTML ONLY.
     - Use Tailwind CSS for ALL styling
     - Include this EXACT script in the <head>: <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     - Use Tailwind utility classes extensively for styling, animations, and responsiveness
@@ -161,7 +165,24 @@ export const createUserProjects = async (req: Request, res: Response) => {
       ],
     });
 
+    console.log("Code Generation Response:", codeGenerationResponse);
+
     const code = codeGenerationResponse.choices[0].message.content || "";
+
+    if (!code || code.trim() === "") {
+      await prisma.conversation.create({
+        data: {
+          role: "assistant",
+          content: "Unable to generate the code, please try again",
+          projectId: project.id,
+        },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { credits: { increment: 5 } },
+      });
+      return;
+    }
 
     //Create Version For the project
     const version = await prisma.version.create({
