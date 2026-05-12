@@ -8,6 +8,8 @@ import {
 import type { Message, Project, Version } from "../types";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import api from "@/configs/axios";
+import { toast } from "sonner";
 
 interface SideBarProps {
   isMenuOpen: boolean;
@@ -27,13 +29,62 @@ const SideBar = ({
   const messageRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState("");
 
-  const handleRollBack = async (versionId: string) => {};
+  const fetchProject = async () => {
+    try {
+      const { data } = await api.get(`/api/user/project/${project.id}`);
+      setProject(data.project);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to fetch project");
+      console.error("Error fetching project:", error);
+    }
+  };
+
+  const handleRollBack = async (versionId: string) => {
+    try {
+      const confirm = window.confirm(
+        "Are you sure you want to roll back to this version?",
+      );
+      if (!confirm) return;
+      setIsGenerating(true);
+      const { data } = await api.get(
+        `/api/project/rollback/${project.id}/${versionId}`,
+      );
+      const { data: data2 } = await api.get(`/api/user/project/${project.id}`);
+      toast.success(data.message);
+      setProject(data2.project);
+      setIsGenerating(false);
+    } catch (error: any) {
+      setIsGenerating(false);
+      toast.error(
+        error?.response?.data?.message || "Failed to roll back to version",
+      );
+      console.error("Error rolling back to version:", error);
+    }
+  };
+
   const hadleRevisions = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsGenerating(true);
-    setTimeout(() => {
+    let interval: number | undefined;
+    try {
+      setIsGenerating(true);
+      interval = setInterval(() => {
+        fetchProject();
+      }, 10000);
+      const { data } = await api.post(`/api/project/revision/${project.id}`, {
+        message: input,
+      });
+      fetchProject();
+      toast.success(data.message);
+      setInput("");
+
+      clearInterval(interval);
       setIsGenerating(false);
-    }, 3000);
+    } catch (error: any) {
+      setIsGenerating(false);
+      toast.error(error?.response?.data?.message || "Failed to send revision");
+      console.log("Error sending revision:", error);
+      clearInterval(interval);
+    }
   };
 
   useEffect(() => {
