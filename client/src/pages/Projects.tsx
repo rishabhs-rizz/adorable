@@ -26,6 +26,7 @@ import ProjectPreview, {
 import api from "@/configs/axios";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { set } from "better-auth";
 
 const Projects = () => {
   const { projectId } = useParams();
@@ -56,7 +57,23 @@ const Projects = () => {
     }
   };
 
-  const saveProject = async () => {};
+  const saveProject = async () => {
+    if (!previewRef.current) return;
+    const code = previewRef.current.getCode();
+    if (!code) return;
+    setIsSaving(true);
+    try {
+      const { data } = await api.put(`/api/project/save/${projectId}`, {
+        code,
+      });
+      toast.success(data.message || "Project saved successfully");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to save project");
+      console.log("Error saving project:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
   const togglePublish = async () => {};
 
   //function used to download code (index.html)
