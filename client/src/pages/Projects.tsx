@@ -14,11 +14,6 @@ import {
   TabletIcon,
   XIcon,
 } from "lucide-react";
-import {
-  dummyConversations,
-  dummyProjects,
-  dummyVersion,
-} from "../assets/assets";
 import SideBar from "../components/SideBar";
 import ProjectPreview, {
   type ProjectPreviewRef,
@@ -26,7 +21,6 @@ import ProjectPreview, {
 import api from "@/configs/axios";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { set } from "better-auth";
 
 const Projects = () => {
   const { projectId } = useParams();
